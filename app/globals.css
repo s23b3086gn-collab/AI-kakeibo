@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 白基調。文字はやや濃いめのグレーで読みやすく */
+html,
+body {
+  background-color: #ffffff;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  /* Chrome のダークモード自動適用を無効化し、常にライトとして扱わせる */
+  color-scheme: light;
+}
+
+/* iOS Safari でフォーム要素のフォントを引き継ぐ */
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+/* number 入力のスピナーを非表示にしてミニマル化 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* iPhone のノッチ・ホームバー対応（safe-area-inset を使う場合のベース） */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
