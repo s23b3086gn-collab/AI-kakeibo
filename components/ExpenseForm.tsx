@@ -3,6 +3,7 @@
 // 支出を追加するフォーム
 import { useState } from "react";
 import { Card } from "./Card";
+import { ReceiptScanner } from "./ReceiptScanner";
 import { CATEGORIES, type Category, type Expense } from "@/lib/types";
 import { toDateInputValue } from "@/lib/date";
 
@@ -63,9 +64,26 @@ export function ExpenseForm({ onAdd }: Props) {
     setMemo("");
   };
 
+  // レシート読み取り結果をフォームにセットする。
+  // 既存の handleSubmit / バリデーション / リセットロジックには触らない。
+  const handleReceiptResult = (
+    amount: number,
+    category: Category,
+    memo: string,
+  ) => {
+    setAmount(String(amount));
+    setCategory(category);
+    setMemo(memo);
+    // 自動入力で値が変わったらプリセットのハイライトも解除しておく
+    setSelectedPresetIndex(null);
+  };
+
   return (
     <Card title="📝 支出を記録">
       <form onSubmit={handleSubmit} className="space-y-3">
+        {/* === レシート読み取り === */}
+        <ReceiptScanner onResult={handleReceiptResult} />
+
         {/* === クイック入力エリア === */}
         <div>
           <p className="mb-1.5 text-xs text-gray-600">クイック入力</p>
