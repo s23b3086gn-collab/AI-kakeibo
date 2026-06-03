@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AI家計簿 v1",
+    name: "AI家計簿 v2",
     short_name: "AI家計簿",
     description:
       "一人暮らし大学生のための、AI伴走型家計簿。物価高時代の節約をAIがサポート。",

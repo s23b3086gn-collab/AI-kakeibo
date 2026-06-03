@@ -134,7 +134,7 @@ export default function Page() {
         {/* === タイトルヘッダー（全タブ共通） === */}
         <header className="mb-4">
           <h1 className="text-xl font-bold">
-            AI家計簿 <span className="text-xs text-gray-500">v1</span>
+            AI家計簿 <span className="text-xs text-gray-500">v2</span>
           </h1>
           <p className="mt-0.5 text-xs text-gray-500">
             物価高時代の節約をAIがサポート
