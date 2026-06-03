@@ -1,16 +1,10 @@
-// 週次ふりかえりレポートを Claude API で生成する API ルート。
-// クライアントから今週の支出データを受け取り、AIが200文字以内の振り返りコメントを返す。
-// 失敗時もエラーレスポンスではなく fallback コメントを返してクライアントを簡潔に保つ。
+// 週次ふりかえりレポートAPI（モック版）。
+// Claude API を呼ばずに、実データに応じてテンプレ文を組み立てるデモ実装。
+//
+// 本物の Claude API に戻したい場合は git history から復元できる。
 
-import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import type { Expense } from "@/lib/types";
-
-// ANTHROPIC_API_KEY を環境変数（.env.local）から自動で読み取る
-const client = new Anthropic();
-
-// 失敗時に返す既定値
-const FALLBACK = { comment: "レポートを生成できませんでした。" };
 
 interface RequestBody {
   weeklyExpenses: Expense[];
@@ -18,122 +12,122 @@ interface RequestBody {
   weeklySpent: number;
 }
 
-// Anthropic SDK は Node ランタイムが必要
 export const runtime = "nodejs";
-// LLM 推論で時間がかかる可能性があるので余裕を持たせる
-export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {
+    // 本物っぽく見せるための擬似ローディング時間（1200ms）
+    await sleep(1200);
+
     const body = (await request.json()) as Partial<RequestBody>;
 
-    // 簡易バリデーション
     if (
       !Array.isArray(body.weeklyExpenses) ||
       typeof body.weeklyBudget !== "number" ||
       typeof body.weeklySpent !== "number"
     ) {
-      return NextResponse.json(FALLBACK);
+      return NextResponse.json({
+        comment: "レポートを生成できませんでした。",
+      });
     }
 
-    // 0件のときはモデルを呼ばずに固定文を返す（コスト節約）
     if (body.weeklyExpenses.length === 0) {
       return NextResponse.json({
         comment: "今週はまだ支出が記録されていません。",
       });
     }
 
-    // モデルに渡しやすい形に集計テキスト化する
-    const userPrompt = buildSummary(
+    const comment = buildMockComment(
       body.weeklyExpenses,
       body.weeklyBudget,
       body.weeklySpent,
     );
 
-    const response = await client.messages.create({
-      // NOTE: 2026-06-15 廃止予定。後継は claude-sonnet-4-6
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 512,
-      system:
-        "あなたは家計簿アシスタントです。一人暮らしの大学生の今週の支出データを見て、200文字以内の日本語でふりかえりコメントを生成してください。褒めるべき点・改善点・来週へのアドバイスを含めてください。前置き不要。コメント本文のみ返してください。",
-      messages: [
-        {
-          role: "user",
-          content: userPrompt,
-        },
-      ],
-    });
-
-    const textBlock = response.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json(FALLBACK);
-    }
-
-    const comment = textBlock.text.trim();
-    if (!comment) {
-      return NextResponse.json(FALLBACK);
-    }
-
     return NextResponse.json({ comment });
   } catch (error) {
-    // 認証失敗・レート制限・ネットワークエラーなど
-    console.error("[/api/weekly-report] error:", error);
-    return NextResponse.json(FALLBACK);
+    console.error("[/api/weekly-report mock] error:", error);
+    return NextResponse.json({
+      comment: "レポートを生成できませんでした。",
+    });
   }
 }
 
-// ----- helpers -----
-
-// モデル向けに「今週の家計サマリ」を Markdown 風に整形する。
-// 生 JSON を渡すよりも読み取り精度が上がる。
-function buildSummary(
+// 実データに応じてテンプレ文を組み立てる。
+// データを実際に見ているので、本物のAIっぽい応答に見える。
+function buildMockComment(
   expenses: Expense[],
   budget: number,
   spent: number,
 ): string {
-  // カテゴリ別の集計
-  const byCat: Record<string, { amount: number; count: number }> = {};
+  // 最大カテゴリを抽出
+  const byCategory: Record<string, number> = {};
   for (const e of expenses) {
-    if (!byCat[e.category]) byCat[e.category] = { amount: 0, count: 0 };
-    byCat[e.category].amount += e.amount;
-    byCat[e.category].count += 1;
+    byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
   }
-  const categoryLines = Object.entries(byCat)
-    .sort((a, b) => b[1].amount - a[1].amount)
-    .map(
-      ([cat, v]) =>
-        `- ${cat}: ¥${v.amount.toLocaleString("ja-JP")}（${v.count}件）`,
-    );
+  const topEntry = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0];
+  const topCategory = topEntry?.[0] ?? "食費";
 
-  // 予算との対比文言
+  const eatingOut =
+    (byCategory["外食"] ?? 0) + (byCategory["コンビニ"] ?? 0);
+  const cooking = byCategory["食費"] ?? 0;
+  const eatingOutRatio = spent > 0 ? eatingOut / spent : 0;
+  const cookingRatio = spent > 0 ? cooking / spent : 0;
+
+  const usageRate = budget > 0 ? spent / budget : 0;
   const remaining = budget - spent;
-  let budgetLine = "- 週予算: 未設定";
+
+  // 予算消化フレーズ
+  let budgetPhrase = "";
   if (budget > 0) {
-    const usageRate = Math.round((spent / budget) * 100);
-    budgetLine =
-      remaining >= 0
-        ? `- 週予算: ¥${budget.toLocaleString("ja-JP")}（消化 ${usageRate}%、残り ¥${remaining.toLocaleString("ja-JP")}）`
-        : `- 週予算: ¥${budget.toLocaleString("ja-JP")}（¥${Math.abs(remaining).toLocaleString("ja-JP")} オーバー）`;
+    if (usageRate >= 1) {
+      budgetPhrase = `予算を¥${(spent - budget).toLocaleString("ja-JP")}オーバーしてしまいました。`;
+    } else if (usageRate >= 0.8) {
+      budgetPhrase = `予算の${Math.round(usageRate * 100)}%まで使っています。`;
+    } else if (usageRate >= 0.5) {
+      budgetPhrase = `予算の半分以上（${Math.round(usageRate * 100)}%）を消化しています。`;
+    } else {
+      budgetPhrase = `予算内にしっかり収まっています（消化率${Math.round(usageRate * 100)}%）。`;
+    }
   }
 
-  // 直近の支出メモ（最大5件まで、傾向を掴むヒント）
-  const recentMemos = expenses
-    .slice(-5)
-    .map((e) => {
-      const memo = e.memo ? `「${e.memo}」` : "";
-      return `- ${e.date}: ${e.category} ¥${e.amount.toLocaleString("ja-JP")}${memo}`;
-    });
+  // 褒めるポイント
+  let praise = "";
+  if (cookingRatio >= 0.4 && cookingRatio > eatingOutRatio) {
+    praise = "自炊比率が高いのは素晴らしいです。";
+  } else if (usageRate < 0.5 && budget > 0) {
+    praise = "支出ペースは順調で、計画的に動けています。";
+  } else if (expenses.length <= 3) {
+    praise = "支出回数が少なく、無駄遣いを抑えられています。";
+  } else {
+    praise = `${topCategory}を中心にメリハリのある支出ができています。`;
+  }
 
-  return [
-    "【今週の家計データ】",
-    budgetLine,
-    `- 今週の合計支出: ¥${spent.toLocaleString("ja-JP")}`,
-    `- 支出件数: ${expenses.length}件`,
-    "",
-    "【カテゴリ別】",
-    ...categoryLines,
-    "",
-    "【直近の支出（最大5件）】",
-    ...recentMemos,
-  ].join("\n");
+  // 改善ポイント
+  let improvement = "";
+  if (eatingOutRatio >= 0.4) {
+    improvement = "外食・コンビニ比率がやや高めなので、自炊回数を1〜2回増やすと効果的です。";
+  } else if (usageRate >= 0.8) {
+    improvement = `${topCategory}の支出を少し抑えると、予算内に着地しやすくなります。`;
+  } else if (byCategory["コンビニ"] && byCategory["コンビニ"] >= 1500) {
+    improvement = "コンビニ利用が多めなので、週1のまとめ買いを検討してみましょう。";
+  } else {
+    improvement = "このペースを維持しつつ、来週は趣味や交際費の予算枠も意識してみましょう。";
+  }
+
+  // 来週へのアドバイス
+  let advice = "";
+  if (usageRate >= 1) {
+    advice = "来週は3日間だけでも自炊チャレンジをすると、すぐに取り戻せます。";
+  } else if (remaining > 0 && budget > 0) {
+    advice = `残り¥${remaining.toLocaleString("ja-JP")}を意識して、週末まで計画的に過ごしましょう。`;
+  } else {
+    advice = "来週も今週のペースを意識しつつ、無理のない節約を続けていきましょう。";
+  }
+
+  // 200文字以内に収まるよう組み立て
+  return `${praise}${budgetPhrase}${improvement}${advice}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
