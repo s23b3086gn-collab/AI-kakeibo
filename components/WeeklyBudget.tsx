@@ -108,6 +108,8 @@ export function WeeklyBudget({
       <label className="mt-4 block text-left text-xs text-gray-500">
         週予算（円）
         <input
+          // Empty State A の CTA から focus を当てるためのアンカー
+          id="weekly-budget-input"
           type="number"
           inputMode="numeric"
           min={0}

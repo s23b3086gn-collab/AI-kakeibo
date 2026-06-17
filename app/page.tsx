@@ -16,29 +16,24 @@ import { MonthlySummaryCard } from "@/components/MonthlySummaryCard";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { ExpenseList } from "@/components/ExpenseList";
 import { LinkageNotification } from "@/components/LinkageNotification";
+import { CheapForecast } from "@/components/CheapForecast";
+import { QuickPresetEditor } from "@/components/QuickPresetEditor";
 import { BottomNav, type TabId } from "@/components/BottomNav";
 
-import type { Assets, Expense } from "@/lib/types";
+import type { Assets, Expense, QuickPreset } from "@/lib/types";
+import {
+  DEFAULT_QUICK_PRESETS,
+  migrateQuickPresets,
+} from "@/lib/defaultPresets";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from "@/lib/storage";
 import { generateAIComments, type AIComment } from "@/lib/aiComment";
 import { endOfThisWeek, startOfThisWeek, toDateInputValue } from "@/lib/date";
-import { DUMMY_PRICE_NEWS } from "@/lib/priceNews";
+import { DUMMY_PRICE_NEWS, type PriceNews } from "@/lib/priceNews";
 import { DUMMY_PRICE_PREDICTIONS } from "@/lib/pricePrediction";
 import { generateSavingsAdvice } from "@/lib/savingsAdvice";
 
 // 初期値（初回起動時はすべて 0）
 const INITIAL_ASSETS: Assets = { bank: 0, cash: 0, income: 0 };
-
-// ----- ホームタブのクイック入力プリセット -----
-// ExpenseForm.tsx の QUICK_PRESETS と同じデータ。
-// ホームではワンタップで即記録するため、こちらにも独立に定義する。
-const QUICK_PRESETS = [
-  { label: "🍚 自炊",     amount: 500,  category: "食費",     memo: "自炊" },
-  { label: "🍜 外食",     amount: 1000, category: "外食",     memo: "外食" },
-  { label: "🏪 コンビニ", amount: 500,  category: "コンビニ", memo: "コンビニ" },
-  { label: "🚃 交通",     amount: 200,  category: "交通",     memo: "" },
-  { label: "☕ カフェ",   amount: 600,  category: "外食",     memo: "カフェ" },
-] as const;
 
 export default function Page() {
   // ----- state -----
@@ -54,8 +49,17 @@ export default function Page() {
   // setLastWeekTotal は localStorage 同期に使うので setter は保持
   const [, setLastWeekTotal] = useState<number>(0);
 
+  // ユーザーカスタムのクイック入力プリセット
+  const [quickPresets, setQuickPresets] =
+    useState<QuickPreset[]>(DEFAULT_QUICK_PRESETS);
+  // プリセット編集モーダルの開閉
+  const [presetEditorOpen, setPresetEditorOpen] = useState(false);
+
   // 現在開いているタブ
   const [activeTab, setActiveTab] = useState<TabId>("home");
+
+  // 物価高ニュース：起動時は DUMMY を表示、その後 /api/price-news で実データに差し替え
+  const [priceNews, setPriceNews] = useState<PriceNews[]>(DUMMY_PRICE_NEWS);
 
   // ----- 初回マウント時に localStorage からロード -----
   useEffect(() => {
@@ -75,7 +79,37 @@ export default function Page() {
     }
     setLastWeekTotal(loadFromStorage<number>(STORAGE_KEYS.lastWeekTotal, 0));
 
+    // クイック入力プリセット：保存済みデータを読み込み、必要なら旧形式から変換
+    // （以前は { label: "🍚 自炊" } 形式だったので、現在の { icon, name } に移行する）
+    const rawPresets = loadFromStorage<unknown>(
+      STORAGE_KEYS.quickPresets,
+      null,
+    );
+    setQuickPresets(
+      rawPresets === null ? DEFAULT_QUICK_PRESETS : migrateQuickPresets(rawPresets),
+    );
+
     setHydrated(true);
+  }, []);
+
+  // ----- Google News RSS から実データ取得（失敗時は DUMMY のまま） -----
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/price-news")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: unknown) => {
+        if (cancelled) return;
+        if (Array.isArray(data) && data.length > 0) {
+          setPriceNews(data as PriceNews[]);
+        }
+        // 取得失敗 or 空配列なら DUMMY のまま（壊さない）
+      })
+      .catch(() => {
+        /* keep dummy */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ----- 変更があったら localStorage に保存 -----
@@ -99,6 +133,12 @@ export default function Page() {
     if (!hydrated) return;
     saveToStorage(STORAGE_KEYS.recordDates, recordDates);
   }, [recordDates, hydrated]);
+
+  // クイック入力プリセットを localStorage に同期
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.quickPresets, quickPresets);
+  }, [quickPresets, hydrated]);
 
   // ----- 派生値 -----
   const {
@@ -213,7 +253,7 @@ export default function Page() {
     setExpenses((prev) => prev.filter((e) => e.id !== id));
 
   // ホームのクイック入力ボタン：ワンタップで即記録（確認ステップなし）
-  const handleQuickAdd = (preset: (typeof QUICK_PRESETS)[number]) => {
+  const handleQuickAdd = (preset: QuickPreset) => {
     addExpense({
       id: Math.random().toString(36).slice(2) + Date.now().toString(36),
       amount: preset.amount,
@@ -227,6 +267,22 @@ export default function Page() {
   // 未使用警告を避けるため明示的に void で参照しておく
   void assets;
   void setAssets;
+
+  // ----- Empty State の判定 -----
+  // A: 完全初回（支出 0 件 & 予算未設定）
+  const isFirstVisit = expenses.length === 0 && weeklyBudget <= 0;
+  // B: 予算は設定済みだが支出 0 件
+  const hasNoRecords = expenses.length === 0 && weeklyBudget > 0;
+
+  // CTA: 週予算入力欄にスクロール＋フォーカス
+  // ※ WeeklyBudget 内の input に id="weekly-budget-input" を付与済み
+  const focusBudgetInput = () => {
+    const el = document.getElementById("weekly-budget-input");
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // スクロール完了を少し待ってからフォーカス（モバイルでキーボード表示が暴れないように）
+    setTimeout(() => el.focus(), 350);
+  };
 
   return (
     <>
@@ -245,68 +301,161 @@ export default function Page() {
           {/* === ホームタブ === */}
           {activeTab === "home" && (
             <>
-              {/* 電子マネー連携：連携済みサービスから取り込み候補があれば通知 */}
-              <LinkageNotification onRecord={addExpense} />
-
-              {/* 記録ストリーク：今週の記録日数。3日以上で🔥継続中バッジ */}
-              <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div>
-                  <p className="text-xs text-gray-500">記録ストリーク</p>
-                  <p className="mt-0.5 text-sm text-gray-700">
-                    今週
-                    <span className="mx-1 text-lg font-bold text-accent">
-                      {weeklyRecordCount}
-                    </span>
-                    回記録
-                  </p>
-                </div>
-                {weeklyRecordCount >= 3 && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-                    🔥 継続中
-                  </span>
-                )}
-              </div>
-
-              <WeeklyBudget
-                weeklyBudget={weeklyBudget}
-                weeklySpent={weeklySpent}
-                monthlyTotal={monthlyTotal}
-                onChangeBudget={setWeeklyBudget}
-              />
-              <AICommentCard comments={aiComments} />
-
-              {/* クイック入力：タップで今日の支出を即記録 */}
-              <Card title="⚡ クイック入力">
-                <p className="mb-2 text-xs text-gray-500">
-                  タップで今日の支出をワンタップ記録
-                </p>
-                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                  {QUICK_PRESETS.map((p) => (
+              {isFirstVisit ? (
+                // ===== Empty State A：完全初回ユーザー =====
+                // 「まず週予算を決めてみよう」をメインに据え、他のホームUIは出さない
+                <>
+                  <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+                    <div className="text-5xl" aria-hidden>
+                      💰
+                    </div>
+                    <h2 className="mt-3 text-lg font-bold text-gray-900">
+                      まず週予算を決めてみよう
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-600">
+                      予算を設定すると、AIが使いすぎを教えてくれます
+                    </p>
                     <button
-                      key={p.label}
                       type="button"
-                      onClick={() => handleQuickAdd(p)}
-                      className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:border-accent hover:text-accent active:scale-[0.97]"
+                      onClick={focusBudgetInput}
+                      className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 active:scale-[0.97]"
                     >
-                      {p.label}
-                      <span className="ml-1 text-[10px] opacity-80">
-                        ¥{p.amount}
-                      </span>
+                      週予算を設定する
+                      <span aria-hidden>→</span>
                     </button>
-                  ))}
-                </div>
-              </Card>
+                  </section>
 
-              <p className="text-center text-xs text-gray-400">
-                今週の支出: {weeklyExpenses.length} 件
-              </p>
+                  {/* 入力欄は同じページに残す（CTA のスクロール先） */}
+                  <WeeklyBudget
+                    weeklyBudget={weeklyBudget}
+                    weeklySpent={weeklySpent}
+                    monthlyTotal={monthlyTotal}
+                    onChangeBudget={setWeeklyBudget}
+                  />
+                </>
+              ) : (
+                // ===== 通常レイアウト（hasNoRecords のときは中央を Empty State B に差し替え） =====
+                <>
+                  {/* 電子マネー連携：連携済みサービスから取り込み候補があれば通知 */}
+                  <LinkageNotification onRecord={addExpense} />
+
+                  {/* 記録ストリーク：今週の記録日数。3日以上で🔥継続中バッジ */}
+                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div>
+                      <p className="text-xs text-gray-500">記録ストリーク</p>
+                      <p className="mt-0.5 text-sm text-gray-700">
+                        今週
+                        <span className="mx-1 text-lg font-bold text-accent">
+                          {weeklyRecordCount}
+                        </span>
+                        回記録
+                      </p>
+                    </div>
+                    {weeklyRecordCount >= 3 && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                        🔥 継続中
+                      </span>
+                    )}
+                  </div>
+
+                  <WeeklyBudget
+                    weeklyBudget={weeklyBudget}
+                    weeklySpent={weeklySpent}
+                    monthlyTotal={monthlyTotal}
+                    onChangeBudget={setWeeklyBudget}
+                  />
+
+                  {hasNoRecords ? (
+                    // ===== Empty State B：予算済み・記録ゼロ =====
+                    <section className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+                      <div className="text-4xl" aria-hidden>
+                        ✨
+                      </div>
+                      <h2 className="mt-2 text-base font-semibold text-gray-900">
+                        今週の記録はまだありません
+                      </h2>
+                      <p className="mt-1 text-xs text-gray-500">
+                        下のクイック入力でさっそく記録してみよう
+                      </p>
+                    </section>
+                  ) : (
+                    <AICommentCard comments={aiComments} />
+                  )}
+
+                  {/* AI予測：もうすぐ安くなる食材をちらっと表示（節約のヒント） */}
+                  <CheapForecast />
+
+                  {/* クイック入力：タップで今日の支出を即記録 */}
+                  {/* hasNoRecords のときは pulse する accent リングを重ねて誘導 */}
+                  <div className="relative">
+                    <Card title="⚡ クイック入力">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-xs text-gray-500">
+                          タップで今日の支出をワンタップ記録
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPresetEditorOpen(true)}
+                          className="text-[11px] font-semibold text-accent hover:underline"
+                        >
+                          ✏️ 編集
+                        </button>
+                      </div>
+
+                      {quickPresets.length === 0 ? (
+                        // プリセット 0 件のときの案内
+                        <button
+                          type="button"
+                          onClick={() => setPresetEditorOpen(true)}
+                          className="w-full rounded-lg border border-dashed border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-accent hover:text-accent active:scale-[0.97]"
+                        >
+                          + プリセットを追加
+                        </button>
+                      ) : (
+                        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                          {quickPresets.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => handleQuickAdd(p)}
+                              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:border-accent hover:text-accent active:scale-[0.97]"
+                            >
+                              {p.icon} {p.name}
+                              <span className="ml-1 text-[10px] opacity-80">
+                                ¥{p.amount}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                    {hasNoRecords && (
+                      <div
+                        className="pointer-events-none absolute inset-0 animate-pulse rounded-2xl ring-2 ring-accent"
+                        aria-hidden
+                      />
+                    )}
+                  </div>
+
+                  {/* 記録 0 件のときは件数表示を出さない（Empty State B と重複するため） */}
+                  {!hasNoRecords && (
+                    <p className="text-center text-xs text-gray-400">
+                      今週の支出: {weeklyExpenses.length} 件
+                    </p>
+                  )}
+                </>
+              )}
             </>
           )}
 
           {/* === 記録タブ ===（ExpenseForm 内に ReceiptScanner を含む） */}
           {activeTab === "record" && (
             <>
-              <ExpenseForm onAdd={addExpense} />
+              <ExpenseForm
+                onAdd={addExpense}
+                presets={quickPresets}
+                onEditPresets={() => setPresetEditorOpen(true)}
+              />
               <ExpenseList expenses={expenses} onDelete={deleteExpense} />
             </>
           )}
@@ -331,13 +480,25 @@ export default function Page() {
           {/* === 物価タブ === */}
           {activeTab === "price" && (
             <>
-              <PriceNewsCard news={DUMMY_PRICE_NEWS} />
+              <PriceNewsCard news={priceNews} />
               <PricePredictionCard predictions={DUMMY_PRICE_PREDICTIONS} />
               <SavingsAdviceCard advices={savingsAdvices} />
             </>
           )}
         </div>
       </main>
+
+      {/* === クイック入力プリセット編集モーダル === */}
+      {presetEditorOpen && (
+        <QuickPresetEditor
+          presets={quickPresets}
+          onSave={(next) => {
+            setQuickPresets(next);
+            setPresetEditorOpen(false);
+          }}
+          onClose={() => setPresetEditorOpen(false)}
+        />
+      )}
 
       {/* === ボトムナビゲーション（共通コンポーネント、5タブ） === */}
       <BottomNav activeId={activeTab} onSelectInPageTab={setActiveTab} />

@@ -19,14 +19,17 @@ const LEVEL_STYLE: Record<
   PriceLevel,
   { badge: string; bar: string; text: string }
 > = {
-  surge:  { badge: "bg-red-100 text-red-700",    bar: "bg-red-500",    text: "text-red-700" },
-  warn:   { badge: "bg-amber-100 text-amber-700", bar: "bg-amber-500",  text: "text-amber-700" },
-  stable: { badge: "bg-green-100 text-green-700", bar: "bg-green-500",  text: "text-green-700" },
+  surge:  { badge: "bg-red-100 text-red-700",      bar: "bg-red-500",    text: "text-red-700" },
+  warn:   { badge: "bg-amber-100 text-amber-700",  bar: "bg-amber-500",  text: "text-amber-700" },
+  // stable は「変動なし」なので中立のグレーに（drop と色がかぶらないように）
+  stable: { badge: "bg-gray-100 text-gray-700",    bar: "bg-gray-400",   text: "text-gray-700" },
+  // drop は「値下がり = 嬉しいニュース」なので緑
+  drop:   { badge: "bg-green-100 text-green-700",  bar: "bg-green-500",  text: "text-green-700" },
 };
 
 export function PricePredictionCard({ predictions }: Props) {
   return (
-    <Card title="🔮 値上がり予測（AI分析）">
+    <Card title="🔮 価格予測（AI分析）">
       <ul className="space-y-2">
         {predictions.map((p) => {
           const s = LEVEL_STYLE[p.level];

@@ -14,6 +14,8 @@ export const STORAGE_KEYS = {
   linkedServices: "ai-kakeibo:linkedServices",
   // 取込候補の処理済みID（記録 or スキップ済み）
   linkageProcessed: "ai-kakeibo:linkageProcessed",
+  // ユーザーがカスタマイズしたクイック入力プリセット（未設定なら DEFAULT_QUICK_PRESETS を使う）
+  quickPresets: "ai-kakeibo:quickPresets",
 } as const;
 
 // 値を読み出す。失敗時は fallback を返す

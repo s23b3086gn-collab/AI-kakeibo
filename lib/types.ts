@@ -34,3 +34,14 @@ export interface Assets {
   cash: number;   // 財布の現金
   income: number; // 今月の収入
 }
+
+// ユーザーがカスタマイズできるクイック入力プリセット
+// 表示はボタン上で `${icon} ${name}` として組み立てる
+export interface QuickPreset {
+  id: string;       // 一意な ID（編集・削除の特定用）
+  icon: string;     // 単一の絵文字（例 "🍚"）
+  name: string;     // 表示名（例 "自炊"）
+  amount: number;   // 金額（円）
+  category: Category;
+  memo: string;     // 自動でメモ欄に入る文字（空可）
+}
