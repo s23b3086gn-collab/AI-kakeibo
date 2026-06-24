@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   linkageProcessed: "ai-kakeibo:linkageProcessed",
   // ユーザーがカスタマイズしたクイック入力プリセット（未設定なら DEFAULT_QUICK_PRESETS を使う）
   quickPresets: "ai-kakeibo:quickPresets",
+  // 毎日のリマインダー通知設定（有効/時刻）
+  reminderSettings: "ai-kakeibo:reminderSettings",
 } as const;
 
 // 値を読み出す。失敗時は fallback を返す

@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { SERVICES, type ServiceId } from "@/lib/linkageData";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from "@/lib/storage";
 
@@ -71,6 +72,11 @@ export default function ConnectPage() {
         </header>
 
         {/* サービス一覧 */}
+        {/* === 通知リマインダー設定 === */}
+        <div className="mb-4">
+          <NotificationSettings />
+        </div>
+
         <div className="space-y-3">
           {SERVICES.map((s) => {
             const isLinked = !!linked[s.id];

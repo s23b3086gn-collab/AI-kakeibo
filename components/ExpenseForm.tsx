@@ -4,9 +4,10 @@
 // クイック入力プリセットは親（app/page.tsx）から props で受け取る方式に変更し、
 // localStorage 経由のユーザーカスタムに対応している。
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "./Card";
 import { ReceiptScanner } from "./ReceiptScanner";
+import { VoiceInput } from "./VoiceInput";
 import {
   CATEGORIES,
   type Category,
@@ -14,6 +15,7 @@ import {
   type QuickPreset,
 } from "@/lib/types";
 import { toDateInputValue } from "@/lib/date";
+import { isVoiceInputSupported } from "@/lib/voiceInput";
 
 interface Props {
   onAdd: (expense: Expense) => void;
@@ -33,6 +35,12 @@ export function ExpenseForm({ onAdd, presets, onEditPresets }: Props) {
   // index ではなく id 管理にしたことで、プリセット並び替え/追加削除後でも
   // ハイライトが破綻しない。
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+
+  // 音声入力対応ブラウザかどうかをマウント後に検出（SSR / 未対応ブラウザ対応）
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  useEffect(() => {
+    setVoiceSupported(isVoiceInputSupported());
+  }, []);
 
   // プリセットボタンを押したときの処理。
   // 即送信ではなく「フォームに値が入った状態」にして、ユーザーが確認できるようにする。
@@ -81,8 +89,16 @@ export function ExpenseForm({ onAdd, presets, onEditPresets }: Props) {
   return (
     <Card title="📝 支出を記録">
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* === レシート読み取り === */}
-        <ReceiptScanner onResult={handleReceiptResult} />
+        {/* === レシート読み取り / 音声入力 === */}
+        {/* 対応ブラウザでは2列、未対応では レシートのみ全幅 */}
+        {voiceSupported ? (
+          <div className="grid grid-cols-2 gap-2">
+            <ReceiptScanner onResult={handleReceiptResult} />
+            <VoiceInput onResult={handleReceiptResult} />
+          </div>
+        ) : (
+          <ReceiptScanner onResult={handleReceiptResult} />
+        )}
 
         {/* === クイック入力エリア === */}
         <div>
