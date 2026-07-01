@@ -12,6 +12,7 @@ import { PricePredictionCard } from "@/components/PricePredictionCard";
 import { SavingsAdviceCard } from "@/components/SavingsAdviceCard";
 import { WeeklyReportCard } from "@/components/WeeklyReportCard";
 import { WeeklyComparisonCard } from "@/components/WeeklyComparisonCard";
+import { CalendarHeatmap } from "@/components/CalendarHeatmap";
 import { MonthlySummaryCard } from "@/components/MonthlySummaryCard";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { ExpenseList } from "@/components/ExpenseList";
@@ -290,7 +291,7 @@ export default function Page() {
         {/* === タイトルヘッダー（全タブ共通） === */}
         <header className="mb-4">
           <h1 className="text-xl font-bold">
-            AI家計簿 <span className="text-xs text-gray-500">v5</span>
+            AI家計簿 <span className="text-xs text-gray-500">v6</span>
           </h1>
           <p className="mt-0.5 text-xs text-gray-500">
             物価高時代の節約をAIがサポート
@@ -463,6 +464,8 @@ export default function Page() {
           {/* === レポートタブ === */}
           {activeTab === "report" && (
             <>
+              {/* 月別カレンダーヒートマップ：日ごとの支出を色濃度で可視化（レポートの入り口） */}
+              <CalendarHeatmap expenses={expenses} />
               <WeeklyReportCard
                 weeklyExpenses={weeklyExpenses}
                 weeklyBudget={weeklyBudget}

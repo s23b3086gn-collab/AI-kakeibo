@@ -6,7 +6,7 @@ import { ReminderTimer } from "@/components/ReminderTimer";
 
 // タブやSNSでの表示メタ情報
 export const metadata: Metadata = {
-  title: "AI家計簿 v5",
+  title: "AI家計簿 v6",
   description:
     "一人暮らし大学生のための、AI伴走型家計簿。物価高時代の節約をAIがサポート。",
   applicationName: "AI家計簿",
