@@ -1,7 +1,13 @@
 "use client";
 
 // 音声入力ボタン。Web Speech API（SpeechRecognition）を使う。
-// Chrome/Edge/Android Chrome 等が対象。未対応ブラウザでは何も描画しない。
+// Chrome/Edge/Android Chrome + iOS Safari(14.5+) が対象。
+//
+// 【iOS Safari 対応の重要ポイント】
+//   ・SpeechRecognition インスタンスは事前に作らず、ユーザーがボタンを
+//     タップした「その瞬間」に生成する。これが iOS のユーザー操作要件に必要。
+//   ・エラー時は原因コードを画面に出して、権限/HTTPS/ネットワークなどの
+//     どこで詰まっているか切り分けやすくする。
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -17,7 +23,7 @@ interface Props {
 
 type Status = "idle" | "listening" | "success" | "error";
 
-// SpeechRecognition は非標準なので最低限の型だけ宣言
+// SpeechRecognition の最低限のインタフェース（型定義が標準に無いため自前で）
 interface SpeechRecognitionLike {
   lang: string;
   interimResults: boolean;
@@ -25,11 +31,12 @@ interface SpeechRecognitionLike {
   maxAlternatives: number;
   start(): void;
   abort(): void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onresult:
+    | ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void)
+    | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
 }
-
 type Ctor = new () => SpeechRecognitionLike;
 
 export function VoiceInput({ onResult }: Props) {
@@ -37,40 +44,85 @@ export function VoiceInput({ onResult }: Props) {
   const [hint, setHint] = useState<string | null>(null);
   const [supported, setSupported] = useState(false);
 
-  const recRef = useRef<SpeechRecognitionLike | null>(null);
+  const currentRecRef = useRef<SpeechRecognitionLike | null>(null);
   const onResultRef = useRef(onResult);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 親から渡される最新コールバックを参照
+  // 親から渡される最新コールバックを ref で追跡
   useEffect(() => {
     onResultRef.current = onResult;
   }, [onResult]);
 
-  // 初回のみ：対応判定 + 認識器のセットアップ
+  // マウント後に対応判定
   useEffect(() => {
-    if (!isVoiceInputSupported()) return;
-    setSupported(true);
+    setSupported(isVoiceInputSupported());
+  }, []);
+
+  // 進行中の認識セッションをクリーンアップ（アンマウント時）
+  useEffect(() => {
+    return () => {
+      if (currentRecRef.current) {
+        try {
+          currentRecRef.current.abort();
+        } catch {
+          /* noop */
+        }
+      }
+    };
+  }, []);
+
+  // ヒント表示を数秒で消す
+  const scheduleClear = () => {
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    hintTimerRef.current = setTimeout(() => {
+      setHint(null);
+      setStatus("idle");
+    }, 4000);
+  };
+
+  // ★ボタンクリックで SpeechRecognition を「その場で」生成 → start する
+  // iOS Safari はユーザー操作の同一 event loop で instantiate が必要なため
+  const start = () => {
+    if (status === "listening") return;
 
     const w = window as unknown as {
       SpeechRecognition?: Ctor;
       webkitSpeechRecognition?: Ctor;
     };
     const Recognition = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (!Recognition) return;
+    if (!Recognition) {
+      setStatus("error");
+      setHint("このブラウザは音声認識に対応していません");
+      scheduleClear();
+      return;
+    }
 
-    const rec = new Recognition();
+    // 前セッションが残っていれば中断
+    if (currentRecRef.current) {
+      try {
+        currentRecRef.current.abort();
+      } catch {
+        /* noop */
+      }
+    }
+
+    const rec: SpeechRecognitionLike = new Recognition();
     rec.lang = "ja-JP";
     rec.interimResults = false;
     rec.continuous = false;
     rec.maxAlternatives = 1;
 
     rec.onresult = (e) => {
-      const text = e.results[0]?.[0]?.transcript ?? "";
+      const text = e.results?.[0]?.[0]?.transcript ?? "";
       const parsed = parseVoiceInput(text);
       if (parsed) {
         onResultRef.current(parsed.amount, parsed.category, parsed.memo);
         setStatus("success");
         setHint(`「${text}」を入力したよ`);
+      } else if (text) {
+        // 聞き取れたが金額が抽出できなかった場合、聞き取り内容を出してヒント
+        setStatus("error");
+        setHint(`「${text}」— 金額が読み取れませんでした。「〜円」を含めて話してね`);
       } else {
         setStatus("error");
         setHint("『コンビニで500円』のように話してみて");
@@ -80,53 +132,46 @@ export function VoiceInput({ onResult }: Props) {
 
     rec.onerror = (e) => {
       setStatus("error");
-      if (e.error === "not-allowed") {
-        setHint("マイクの許可が必要です");
-      } else if (e.error === "no-speech") {
-        setHint("音声が検出できませんでした");
+      const errCode = e?.error ?? "unknown";
+      if (errCode === "not-allowed" || errCode === "service-not-allowed") {
+        setHint("マイクの許可が必要です。ブラウザ設定を確認して");
+      } else if (errCode === "no-speech") {
+        setHint("音声が検出できませんでした。もう一度話してみて");
+      } else if (errCode === "network") {
+        setHint("ネットワーク接続を確認してください");
+      } else if (errCode === "audio-capture") {
+        setHint("マイクにアクセスできません");
+      } else if (errCode === "aborted") {
+        // 中断は静かに閉じる（エラー表示しない）
+        setStatus("idle");
+        setHint(null);
+        return;
       } else {
-        setHint("音声認識に失敗しました");
+        setHint(`音声認識に失敗（${errCode}）`);
       }
       scheduleClear();
     };
 
     rec.onend = () => {
+      // まだ「listening」のままなら idle に戻す（結果もエラーも無く終わった）
       setStatus((s) => (s === "listening" ? "idle" : s));
     };
 
-    recRef.current = rec;
-    return () => {
-      try {
-        rec.abort();
-      } catch {
-        /* noop */
-      }
-    };
-  }, []);
-
-  // ヒント表示を3秒で消す
-  const scheduleClear = () => {
-    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-    hintTimerRef.current = setTimeout(() => {
-      setHint(null);
-      setStatus("idle");
-    }, 3000);
-  };
-
-  const start = () => {
-    if (!supported || status === "listening") return;
+    currentRecRef.current = rec;
     setHint(null);
     setStatus("listening");
+
     try {
-      recRef.current?.start();
-    } catch {
+      rec.start();
+    } catch (err) {
       setStatus("error");
-      setHint("音声認識を開始できませんでした");
+      const msg = err instanceof Error ? err.message : String(err);
+      setHint(`開始エラー: ${msg}`);
       scheduleClear();
     }
   };
 
-  // 未対応ブラウザでは何も出さない（親側で grid を 1 列に倒す）
+  // 未対応ブラウザでは何も表示しない（親側で grid が 1 列に倒れる）
   if (!supported) return null;
 
   const label =
@@ -156,7 +201,7 @@ export function VoiceInput({ onResult }: Props) {
       {hint && (
         <p
           className={
-            "mt-2 text-center text-xs " +
+            "mt-2 text-center text-xs leading-snug " +
             (status === "error" ? "text-danger" : "text-gray-500")
           }
         >
