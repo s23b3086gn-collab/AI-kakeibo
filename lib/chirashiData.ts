@@ -45,19 +45,19 @@ type RawItem = Omit<ChirashiItem, "id" | "validFrom" | "validTo" | "source">;
 
 const RAW_ITEMS: RawItem[] = [
   // ---------- イオン ----------
-  { store: "イオン", storeArea: "千葉県内", itemName: "キャベツ", category: "野菜", price: 128, normalPrice: 198, unit: "1玉" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "卵", category: "その他", price: 198, normalPrice: 258, unit: "1パック(10個)" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "豚バラ肉", category: "肉", price: 128, normalPrice: 168, unit: "100g" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "鶏むね肉", category: "肉", price: 58, normalPrice: 78, unit: "100g" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "サバ切身", category: "魚", price: 258, normalPrice: 328, unit: "1パック" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "玉ねぎ", category: "野菜", price: 128, normalPrice: 168, unit: "3個" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "にんじん", category: "野菜", price: 108, normalPrice: 148, unit: "3本" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "醤油", category: "調味料", price: 198, normalPrice: 248, unit: "1L" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "コロッケ", category: "惣菜", price: 128, normalPrice: 158, unit: "2個" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "牛乳", category: "その他", price: 198, normalPrice: 238, unit: "1L" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "豆腐", category: "その他", price: 68, normalPrice: 98, unit: "1丁" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "アジ開き", category: "魚", price: 328, normalPrice: 398, unit: "2枚" },
-  { store: "イオン", storeArea: "千葉県内", itemName: "納豆", category: "その他", price: 78, normalPrice: 98, unit: "3パック" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "キャベツ", category: "野菜", price: 128, normalPrice: 198, unit: "1玉" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "卵", category: "その他", price: 198, normalPrice: 258, unit: "1パック(10個)" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "豚バラ肉", category: "肉", price: 128, normalPrice: 168, unit: "100g" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "鶏むね肉", category: "肉", price: 58, normalPrice: 78, unit: "100g" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "サバ切身", category: "魚", price: 258, normalPrice: 328, unit: "1パック" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "玉ねぎ", category: "野菜", price: 128, normalPrice: 168, unit: "3個" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "にんじん", category: "野菜", price: 108, normalPrice: 148, unit: "3本" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "醤油", category: "調味料", price: 198, normalPrice: 248, unit: "1L" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "コロッケ", category: "惣菜", price: 128, normalPrice: 158, unit: "2個" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "牛乳", category: "その他", price: 198, normalPrice: 238, unit: "1L" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "豆腐", category: "その他", price: 68, normalPrice: 98, unit: "1丁" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "アジ開き", category: "魚", price: 328, normalPrice: 398, unit: "2枚" },
+  { store: "イオン", storeArea: "千葉・津田沼", itemName: "納豆", category: "その他", price: 78, normalPrice: 98, unit: "3パック" },
 
   // ---------- ベイシア ----------
   { store: "ベイシア", storeArea: "群馬・埼玉周辺", itemName: "トマト", category: "野菜", price: 198, normalPrice: 258, unit: "4個" },

@@ -39,7 +39,7 @@ const MOCK_DB: Record<
 > = {
   キャベツ: {
     items: [
-      { itemName: "キャベツ", store: "イオン（千葉）", price: 128, unit: "1玉", note: "登録チラシと一致。今週の最安", confidence: 0.9 },
+      { itemName: "キャベツ", store: "イオン（千葉・津田沼）", price: 128, unit: "1玉", note: "登録チラシと一致。今週の最安", confidence: 0.9 },
       { itemName: "キャベツ", store: "ライフ", price: 138, unit: "1玉", note: "近隣店舗の特売（AI推定）", confidence: 0.74 },
       { itemName: "キャベツ", store: "マルエツ", price: 148, unit: "1玉", note: "通常より安め（AI推定）", confidence: 0.68 },
     ],
@@ -48,7 +48,7 @@ const MOCK_DB: Record<
   },
   鶏むね肉: {
     items: [
-      { itemName: "鶏むね肉", store: "イオン（千葉）", price: 58, unit: "100g", note: "登録チラシと一致。100gあたり最安", confidence: 0.9 },
+      { itemName: "鶏むね肉", store: "イオン（千葉・津田沼）", price: 58, unit: "100g", note: "登録チラシと一致。100gあたり最安", confidence: 0.9 },
       { itemName: "鶏むね肉", store: "業務スーパー", price: 298, unit: "1kg", note: "まとめ買いなら割安（100gあたり約¥30）", confidence: 0.82 },
       { itemName: "鶏むね肉", store: "ドン・キホーテ", price: 65, unit: "100g", note: "近隣店舗の特売（AI推定）", confidence: 0.7 },
     ],
@@ -75,7 +75,7 @@ const MOCK_DB: Record<
   米: {
     items: [
       { itemName: "米", store: "業務スーパー", price: 3180, unit: "5kg", note: "今週の最安（AI推定）", confidence: 0.78 },
-      { itemName: "米", store: "イオン（千葉）", price: 3350, unit: "5kg", note: "登録チラシと一致", confidence: 0.75 },
+      { itemName: "米", store: "イオン（千葉・津田沼）", price: 3350, unit: "5kg", note: "登録チラシと一致", confidence: 0.75 },
     ],
     summary:
       "『米』は新米まで価格が高止まりの見込み。当面は大きく下がりにくい相場です。",
@@ -143,7 +143,7 @@ export async function searchChirashiByAI(query: string): Promise<AISearchResult>
 
 // 検索欄に出す店舗チップ（label=表示名、name=結果に使う正式名）
 export const SEARCH_STORES: { label: string; name: string }[] = [
-  { label: "イオン", name: "イオン（千葉）" },
+  { label: "イオン", name: "イオン（千葉・津田沼）" },
   { label: "ベイシア", name: "ベイシア" },
   { label: "業務スーパー", name: "業務スーパー" },
   { label: "ライフ", name: "ライフ" },
