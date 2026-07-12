@@ -1,27 +1,28 @@
 "use client";
 
-// 5タブのボトムナビ。/ と /connect で共有する。
+// 6タブのボトムナビ。/ と /connect で共有する。
 //
 // 動作モード：
-//   1) `/` で使う場合 → `onSelectInPageTab` を渡す。home/record/report/price は
+//   1) `/` で使う場合 → `onSelectInPageTab` を渡す。home/record/report/price/chirashi は
 //      コールバックで in-page タブ切替（高速）。連携は /connect へ Link 遷移。
-//   2) `/connect` で使う場合 → コールバック未渡し。home/record/report/price は
+//   2) `/connect` で使う場合 → コールバック未渡し。home/record/report/price/chirashi は
 //      Link で `/` へ戻る（その後ホーム表示）。連携は現在地。
 
 import Link from "next/link";
 
 // ホーム画面の in-page タブ ID（既存仕様と同じ）
-export type TabId = "home" | "record" | "report" | "price";
+export type TabId = "home" | "record" | "report" | "price" | "chirashi";
 
 // ボトムナビ全体での「現在地」識別子
 export type ActiveId = TabId | "connect";
 
 const TABS: { id: ActiveId; label: string; icon: string }[] = [
-  { id: "home",    label: "ホーム",   icon: "🏠" },
-  { id: "record",  label: "記録",     icon: "📝" },
-  { id: "report",  label: "レポート", icon: "📊" },
-  { id: "price",   label: "物価",     icon: "📈" },
-  { id: "connect", label: "連携",     icon: "💳" },
+  { id: "home",     label: "ホーム",   icon: "🏠" },
+  { id: "record",   label: "記録",     icon: "📝" },
+  { id: "report",   label: "レポート", icon: "📊" },
+  { id: "price",    label: "物価",     icon: "📈" },
+  { id: "chirashi", label: "チラシ",   icon: "🛒" },
+  { id: "connect",  label: "連携",     icon: "💳" },
 ];
 
 interface Props {

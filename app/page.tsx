@@ -32,6 +32,18 @@ import { endOfThisWeek, startOfThisWeek, toDateInputValue } from "@/lib/date";
 import { DUMMY_PRICE_NEWS, type PriceNews } from "@/lib/priceNews";
 import { DUMMY_PRICE_PREDICTIONS } from "@/lib/pricePrediction";
 import { generateSavingsAdvice } from "@/lib/savingsAdvice";
+import { ChirashiList } from "@/components/ChirashiList";
+import { ChirashiAdviceCard } from "@/components/ChirashiAdviceCard";
+import { ChirashiSearchCard } from "@/components/ChirashiSearchCard";
+import { ChirashiScanner } from "@/components/ChirashiScanner";
+import { PriceRadarCard } from "@/components/PriceRadarCard";
+import { HomeConclusionCard } from "@/components/HomeConclusionCard";
+import { WatchlistCard } from "@/components/WatchlistCard";
+import { ItemChartSheet } from "@/components/ItemChartSheet";
+import { DUMMY_CHIRASHI_ITEMS, type ChirashiItem } from "@/lib/chirashiData";
+import { enrichChirashiItems } from "@/lib/chirashiMatch";
+import { generateChirashiAdvice } from "@/lib/chirashiAdvice";
+import { buildHomeConclusion } from "@/lib/homeConclusion";
 
 // 初期値（初回起動時はすべて 0）
 const INITIAL_ASSETS: Assets = { bank: 0, cash: 0, income: 0 };
@@ -62,6 +74,12 @@ export default function Page() {
   // 物価高ニュース：起動時は DUMMY を表示、その後 /api/price-news で実データに差し替え
   const [priceNews, setPriceNews] = useState<PriceNews[]>(DUMMY_PRICE_NEWS);
 
+  // チラシ画像から読み取った特売品目（source: "flyer_image"）。DUMMY と合わせて表示する
+  const [scannedChirashi, setScannedChirashi] = useState<ChirashiItem[]>([]);
+
+  // 個別チャート（ボトムシート）で開いている食材名。null なら閉じている
+  const [chartItem, setChartItem] = useState<string | null>(null);
+
   // ----- 初回マウント時に localStorage からロード -----
   useEffect(() => {
     const loadedExpenses = loadFromStorage<Expense[]>(STORAGE_KEYS.expenses, []);
@@ -88,6 +106,11 @@ export default function Page() {
     );
     setQuickPresets(
       rawPresets === null ? DEFAULT_QUICK_PRESETS : migrateQuickPresets(rawPresets),
+    );
+
+    // チラシ画像から読み取った特売（保存済みがあれば復元）
+    setScannedChirashi(
+      loadFromStorage<ChirashiItem[]>(STORAGE_KEYS.chirashiScanned, []),
     );
 
     setHydrated(true);
@@ -140,6 +163,12 @@ export default function Page() {
     if (!hydrated) return;
     saveToStorage(STORAGE_KEYS.quickPresets, quickPresets);
   }, [quickPresets, hydrated]);
+
+  // 読み取ったチラシ特売を localStorage に同期
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.chirashiScanned, scannedChirashi);
+  }, [scannedChirashi, hydrated]);
 
   // ----- 派生値 -----
   const {
@@ -235,6 +264,46 @@ export default function Page() {
       savingsAdvices: advices,
     };
   }, [expenses, weeklyBudget, recordDates]);
+
+  // ----- チラシ特売：購買記録・価格予測と接続（この機能の独自価値） -----
+  // DUMMY ＋ 画像読取分（source: "flyer_image"）を合わせて enrich する
+  const chirashiItems = useMemo(
+    () =>
+      enrichChirashiItems(
+        [...DUMMY_CHIRASHI_ITEMS, ...scannedChirashi],
+        expenses,
+        DUMMY_PRICE_PREDICTIONS,
+      ),
+    [expenses, scannedChirashi],
+  );
+  const chirashiAdvices = useMemo(
+    () => generateChirashiAdvice(chirashiItems),
+    [chirashiItems],
+  );
+  // ホーム「今週の買い時」結論カード（フェーズ4：ホームの主役）
+  const homeConclusion = useMemo(
+    () => buildHomeConclusion(chirashiItems, DUMMY_PRICE_PREDICTIONS),
+    [chirashiItems],
+  );
+  // あなた向けウォッチリスト（記録と接続した特売のみ）。
+  // 結論カードに出した品目は除外し、品目重複を除いて買い時・割引優先で最大6件。
+  const watchItems = useMemo(() => {
+    const shown = new Set(homeConclusion.buyItems.map((i) => i.itemName));
+    const seen = new Set<string>();
+    return chirashiItems
+      .filter((i) => i.isForYou && !shown.has(i.itemName))
+      .sort(
+        (a, b) =>
+          Number(b.isBuyTime) - Number(a.isBuyTime) ||
+          (b.discountRate ?? 0) - (a.discountRate ?? 0),
+      )
+      .filter((i) => {
+        if (seen.has(i.itemName)) return false;
+        seen.add(i.itemName);
+        return true;
+      })
+      .slice(0, 6);
+  }, [chirashiItems, homeConclusion]);
 
   // 計算した先週合計を localStorage にミラー保存（仕様：localStorageに保存しておく）
   useEffect(() => {
@@ -335,10 +404,29 @@ export default function Page() {
                   />
                 </>
               ) : (
-                // ===== 通常レイアウト（hasNoRecords のときは中央を Empty State B に差し替え） =====
+                // ===== 通常レイアウト（結論ファースト：買い時→ウォッチ→金額→既存） =====
                 <>
-                  {/* 電子マネー連携：連携済みサービスから取り込み候補があれば通知 */}
-                  <LinkageNotification onRecord={addExpense} />
+                  {/* 今週の買い時（結論カード・最上部・ホームの主役） */}
+                  <HomeConclusionCard
+                    conclusion={homeConclusion}
+                    onSelectItem={setChartItem}
+                  />
+
+                  {/* あなた向けウォッチリスト：記録と接続した特売。無ければ非表示 */}
+                  {watchItems.length > 0 && (
+                    <WatchlistCard
+                      items={watchItems}
+                      onSelectItem={setChartItem}
+                    />
+                  )}
+
+                  {/* 今週つかった金額・予算（記録は買い時判断の土台。結論の下に配置） */}
+                  <WeeklyBudget
+                    weeklyBudget={weeklyBudget}
+                    weeklySpent={weeklySpent}
+                    monthlyTotal={monthlyTotal}
+                    onChangeBudget={setWeeklyBudget}
+                  />
 
                   {/* 記録ストリーク：今週の記録日数。3日以上で🔥継続中バッジ */}
                   <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -359,12 +447,8 @@ export default function Page() {
                     )}
                   </div>
 
-                  <WeeklyBudget
-                    weeklyBudget={weeklyBudget}
-                    weeklySpent={weeklySpent}
-                    monthlyTotal={monthlyTotal}
-                    onChangeBudget={setWeeklyBudget}
-                  />
+                  {/* 電子マネー連携：連携済みサービスから取り込み候補があれば通知 */}
+                  <LinkageNotification onRecord={addExpense} />
 
                   {hasNoRecords ? (
                     // ===== Empty State B：予算済み・記録ゼロ =====
@@ -483,9 +567,29 @@ export default function Page() {
           {/* === 物価タブ === */}
           {activeTab === "price" && (
             <>
+              {/* 価格レーダー：株価チャート風の価格トレンド（物価タブの目玉） */}
+              <PriceRadarCard />
               <PriceNewsCard news={priceNews} />
               <PricePredictionCard predictions={DUMMY_PRICE_PREDICTIONS} />
               <SavingsAdviceCard advices={savingsAdvices} />
+            </>
+          )}
+
+          {/* === チラシタブ === */}
+          {activeTab === "chirashi" && (
+            <>
+              {/* チラシ画像の読み取り：撮影→AI解析→特売一覧に追加（モック） */}
+              <ChirashiScanner
+                onScan={(items) =>
+                  setScannedChirashi((prev) => [...prev, ...items])
+                }
+                scannedCount={scannedChirashi.length}
+                onClear={() => setScannedChirashi([])}
+              />
+              {/* AIチラシ検索：食材名からAIが特売を検索・予測（Web検索由来は要確認ラベル） */}
+              <ChirashiSearchCard />
+              <ChirashiAdviceCard advices={chirashiAdvices} />
+              <ChirashiList items={chirashiItems} />
             </>
           )}
         </div>
@@ -503,7 +607,16 @@ export default function Page() {
         />
       )}
 
-      {/* === ボトムナビゲーション（共通コンポーネント、5タブ） === */}
+      {/* === 個別食材の価格チャート（ボトムシート） === */}
+      {chartItem && (
+        <ItemChartSheet
+          itemName={chartItem}
+          chirashiItems={chirashiItems}
+          onClose={() => setChartItem(null)}
+        />
+      )}
+
+      {/* === ボトムナビゲーション（共通コンポーネント、6タブ） === */}
       <BottomNav activeId={activeTab} onSelectInPageTab={setActiveTab} />
     </>
   );

@@ -18,6 +18,8 @@ export const STORAGE_KEYS = {
   quickPresets: "ai-kakeibo:quickPresets",
   // 毎日のリマインダー通知設定（有効/時刻）
   reminderSettings: "ai-kakeibo:reminderSettings",
+  // チラシ画像から読み取った特売品目（source: "flyer_image"）
+  chirashiScanned: "ai-kakeibo:chirashiScanned",
 } as const;
 
 // 値を読み出す。失敗時は fallback を返す
