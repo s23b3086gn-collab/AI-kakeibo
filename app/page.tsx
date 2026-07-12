@@ -339,20 +339,8 @@ export default function Page() {
   void setAssets;
 
   // ----- Empty State の判定 -----
-  // A: 完全初回（支出 0 件 & 予算未設定）
-  const isFirstVisit = expenses.length === 0 && weeklyBudget <= 0;
-  // B: 予算は設定済みだが支出 0 件
+  // 予算は設定済みだが支出 0 件（初回の週予算オンボーディング画面は廃止）
   const hasNoRecords = expenses.length === 0 && weeklyBudget > 0;
-
-  // CTA: 週予算入力欄にスクロール＋フォーカス
-  // ※ WeeklyBudget 内の input に id="weekly-budget-input" を付与済み
-  const focusBudgetInput = () => {
-    const el = document.getElementById("weekly-budget-input");
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    // スクロール完了を少し待ってからフォーカス（モバイルでキーボード表示が暴れないように）
-    setTimeout(() => el.focus(), 350);
-  };
 
   return (
     <>
@@ -371,41 +359,10 @@ export default function Page() {
           {/* === ホームタブ === */}
           {activeTab === "home" && (
             <>
-              {isFirstVisit ? (
-                // ===== Empty State A：完全初回ユーザー =====
-                // 「まず週予算を決めてみよう」をメインに据え、他のホームUIは出さない
-                <>
-                  <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-                    <div className="text-5xl" aria-hidden>
-                      💰
-                    </div>
-                    <h2 className="mt-3 text-lg font-bold text-gray-900">
-                      まず週予算を決めてみよう
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                      予算を設定すると、AIが使いすぎを教えてくれます
-                    </p>
-                    <button
-                      type="button"
-                      onClick={focusBudgetInput}
-                      className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 active:scale-[0.97]"
-                    >
-                      週予算を設定する
-                      <span aria-hidden>→</span>
-                    </button>
-                  </section>
-
-                  {/* 入力欄は同じページに残す（CTA のスクロール先） */}
-                  <WeeklyBudget
-                    weeklyBudget={weeklyBudget}
-                    weeklySpent={weeklySpent}
-                    monthlyTotal={monthlyTotal}
-                    onChangeBudget={setWeeklyBudget}
-                  />
-                </>
-              ) : (
-                // ===== 通常レイアウト（結論ファースト：買い時→ウォッチ→金額→既存） =====
-                <>
+              {/* ===== ホーム（結論ファースト：買い時→ウォッチ→金額→既存） ===== */}
+              {/* 初回ユーザー向けの「週予算を決める」オンボーディング画面は廃止し、
+                  初回から通常レイアウトを表示する（週予算入力は下の WeeklyBudget に残す） */}
+              <>
                   {/* 今週の買い時（結論カード・最上部・ホームの主役） */}
                   <HomeConclusionCard
                     conclusion={homeConclusion}
@@ -529,7 +486,6 @@ export default function Page() {
                     </p>
                   )}
                 </>
-              )}
             </>
           )}
 
