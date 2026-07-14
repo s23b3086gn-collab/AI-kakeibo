@@ -86,9 +86,12 @@ export default function ConnectPage() {
                 className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="text-3xl" aria-hidden>
-                    {s.icon}
-                  </span>
+                  <img
+                    src={s.icon}
+                    alt=""
+                    aria-hidden
+                    className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                  />
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900">{s.name}</p>
                     <p className="mt-0.5 text-[11px] text-gray-500">

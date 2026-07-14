@@ -4,7 +4,7 @@
 // 結論カード／ウォッチリストの食材をタップすると開く。
 // 「買う前に、それが今高いか安いか」を時系列＋買い時シグナル＋特売ラインで裏付ける。
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Area,
   ComposedChart,
@@ -49,6 +49,46 @@ function yen(n: number): string {
 }
 
 export function ItemChartSheet({ itemName, chirashiItems, onClose }: Props) {
+  // 下スワイプで閉じる（スクロールが先頭のときだけドラッグ開始 → 内部スクロールと共存）
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
+  const draggingRef = useRef(false);
+  const allowDragRef = useRef(false);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const CLOSE_THRESHOLD = 90;
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    allowDragRef.current = (sheetRef.current?.scrollTop ?? 0) <= 0;
+    startYRef.current = e.clientY;
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!allowDragRef.current) return;
+    const delta = e.clientY - startYRef.current;
+    if (!draggingRef.current) {
+      if (delta <= 4) return;
+      draggingRef.current = true;
+      setIsDragging(true);
+      sheetRef.current?.setPointerCapture(e.pointerId);
+    }
+    e.preventDefault();
+    setDragY(Math.max(0, delta));
+  }
+
+  function endDrag() {
+    if (draggingRef.current) {
+      setDragY((y) => {
+        if (y > CLOSE_THRESHOLD) onClose();
+        return y > CLOSE_THRESHOLD ? y : 0;
+      });
+    }
+    draggingRef.current = false;
+    allowDragRef.current = false;
+    setIsDragging(false);
+  }
+
   const series = PRICE_SERIES.find((s) => s.item === itemName) ?? null;
 
   // この食材のチラシ特売（安い順）
@@ -107,14 +147,27 @@ export function ItemChartSheet({ itemName, chirashiItems, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-30 flex items-end justify-center"
+      style={{
+        backgroundColor: `rgba(0, 0, 0, ${Math.max(0, 0.4 - dragY / 500)})`,
+      }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 pb-8"
+        ref={sheetRef}
+        className="max-h-[88vh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-2xl bg-white p-4 pb-8"
+        style={{
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? "none" : "transform 220ms cubic-bezier(0.32,0.72,0,1)",
+          touchAction: "pan-y",
+        }}
         onClick={(e) => e.stopPropagation()}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
       >
         {/* ドラッグハンドル風 + 閉じる */}
         <div className="mb-3 flex items-center justify-between">

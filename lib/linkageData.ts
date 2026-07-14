@@ -20,19 +20,19 @@ export const SERVICES: Service[] = [
   {
     id: "suica",
     name: "Suica",
-    icon: "🚆",
+    icon: "/icons/services/suica.png",
     badgeClass: "bg-green-50 text-green-700 border-green-200",
   },
   {
     id: "paypay",
     name: "PayPay",
-    icon: "💰",
+    icon: "/icons/services/paypay.jpg",
     badgeClass: "bg-red-50 text-red-700 border-red-200",
   },
   {
     id: "rakuten",
     name: "楽天Pay",
-    icon: "🛍️",
+    icon: "/icons/services/rakuten-pay.png",
     badgeClass: "bg-pink-50 text-pink-700 border-pink-200",
   },
 ];

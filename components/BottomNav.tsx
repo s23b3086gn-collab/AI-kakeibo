@@ -17,12 +17,12 @@ export type TabId = "home" | "record" | "report" | "price" | "chirashi";
 export type ActiveId = TabId | "connect";
 
 const TABS: { id: ActiveId; label: string; icon: string }[] = [
-  { id: "home",     label: "ホーム",   icon: "🏠" },
-  { id: "record",   label: "記録",     icon: "📝" },
-  { id: "report",   label: "レポート", icon: "📊" },
-  { id: "price",    label: "物価",     icon: "📈" },
-  { id: "chirashi", label: "チラシ",   icon: "🛒" },
-  { id: "connect",  label: "連携",     icon: "💳" },
+  { id: "home",     label: "ホーム",   icon: "/icons/home.png" },
+  { id: "record",   label: "記録",     icon: "/icons/record.png" },
+  { id: "report",   label: "レポート", icon: "/icons/report.png" },
+  { id: "price",    label: "物価",     icon: "/icons/price.png" },
+  { id: "chirashi", label: "チラシ",   icon: "/icons/chirashi.png" },
+  { id: "connect",  label: "連携",     icon: "/icons/connect.png" },
 ];
 
 interface Props {
@@ -55,7 +55,7 @@ export function BottomNav({ activeId, onSelectInPageTab }: Props) {
                 aria-current={isActive ? "page" : undefined}
                 className={className}
               >
-                <Icon emoji={tab.icon} />
+                <Icon src={tab.icon} active={isActive} />
                 <span>{tab.label}</span>
               </Link>
             );
@@ -72,7 +72,7 @@ export function BottomNav({ activeId, onSelectInPageTab }: Props) {
                 aria-current={isActive ? "page" : undefined}
                 className={className}
               >
-                <Icon emoji={tab.icon} />
+                <Icon src={tab.icon} active={isActive} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -86,7 +86,7 @@ export function BottomNav({ activeId, onSelectInPageTab }: Props) {
               aria-current={isActive ? "page" : undefined}
               className={className}
             >
-              <Icon emoji={tab.icon} />
+              <Icon src={tab.icon} active={isActive} />
               <span>{tab.label}</span>
             </Link>
           );
@@ -96,11 +96,26 @@ export function BottomNav({ activeId, onSelectInPageTab }: Props) {
   );
 }
 
-// アイコン部分の共通レンダリング
-function Icon({ emoji }: { emoji: string }) {
+// アイコン部分の共通レンダリング（タブ名と対応するPNGアイコン）
+// PNGをCSS maskの型として使い、背景色で塗る → 非選択=グレー／選択=文字と同じ緑
+function Icon({ src, active }: { src: string; active: boolean }) {
   return (
-    <span className="text-xl leading-none" aria-hidden>
-      {emoji}
-    </span>
+    <span
+      aria-hidden
+      className={
+        "inline-block h-[22px] w-[22px] transition-colors duration-150 " +
+        (active ? "bg-accent" : "bg-gray-400")
+      }
+      style={{
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }}
+    />
   );
 }
