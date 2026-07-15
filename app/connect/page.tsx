@@ -65,7 +65,7 @@ export default function ConnectPage() {
       <main className="mx-auto max-w-md px-4 py-6 pb-32">
         {/* ヘッダ */}
         <header className="mb-4">
-          <h1 className="text-xl font-bold">💳 電子マネー連携</h1>
+          <h1 className="text-xl font-bold">電子マネー連携</h1>
           <p className="mt-0.5 text-xs text-gray-500">
             連携すると明細を自動取り込みできます（デモ）
           </p>

@@ -121,7 +121,7 @@ export function NotificationSettings() {
     return (
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-bold text-gray-900">
-          🔔 毎日のリマインダー
+          毎日のリマインダー
         </h2>
         <p className="mt-2 text-xs text-gray-500">
           このブラウザは通知 API に対応していません
@@ -135,7 +135,7 @@ export function NotificationSettings() {
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <h2 className="text-base font-bold text-gray-900">
-        🔔 毎日のリマインダー
+        毎日のリマインダー
       </h2>
       <p className="mt-1 text-xs text-gray-500">
         指定した時刻に「今日の支出は記録した？」と通知します
@@ -232,7 +232,7 @@ export function NotificationSettings() {
         onClick={onTest}
         className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition active:scale-[0.97] hover:bg-gray-50"
       >
-        🧪 テスト通知を送る
+        テスト通知を送る
       </button>
       {testResult && (
         <p
