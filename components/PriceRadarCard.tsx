@@ -11,7 +11,7 @@
 // 価格は「上昇＝赤（家計に痛い）／下落＝緑（お買い得）」で色分け（買い物視点）。
 // データはすべてダミー（lib/priceHistory.ts）。実データ差し替えは将来の課題。
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Line,
   LineChart,
@@ -31,6 +31,7 @@ import {
 } from "@/lib/priceHistory";
 import type { PriceLevel } from "@/lib/pricePrediction";
 import { DUMMY_CHIRASHI_ITEMS } from "@/lib/chirashiData";
+import { getRecentlyBoughtItems, toggleBought } from "@/lib/purchaseRecords";
 
 // 複合チャートで銘柄を識別するための固定色（トレンドではなく「銘柄の色」）
 const ITEM_COLOR: Record<string, string> = {
@@ -79,6 +80,16 @@ export function PriceRadarCard() {
       else next.add(item);
       return next;
     });
+  };
+
+  // 「買った」記録（品目名の集合）。マウント後にlocalStorageから読み込む
+  const [bought, setBought] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setBought(getRecentlyBoughtItems());
+  }, []);
+
+  const handleToggleBought = (item: string, price: number) => {
+    setBought(toggleBought(item, price));
   };
 
   const { labels, composite, rows, summary } = useMemo(() => {
@@ -211,7 +222,28 @@ export function PriceRadarCard() {
               dataKey={s.item}
               stroke={ITEM_COLOR[s.item]}
               strokeWidth={1.8}
-              dot={false}
+              dot={(dotProps: {
+                cx?: number;
+                cy?: number;
+                index?: number;
+                payload?: { label?: string };
+              }) => {
+                const { cx, cy, index, payload } = dotProps;
+                if (bought.has(s.item) && payload?.label === "今週") {
+                  return (
+                    <circle
+                      key={`bought-${s.item}-${index}`}
+                      cx={cx}
+                      cy={cy}
+                      r={4.5}
+                      fill={ITEM_COLOR[s.item]}
+                      stroke="#fff"
+                      strokeWidth={1.5}
+                    />
+                  );
+                }
+                return <g key={`dot-${s.item}-${index}`} />;
+              }}
               activeDot={{ r: 3 }}
               isAnimationActive={false}
             />
@@ -231,67 +263,107 @@ export function PriceRadarCard() {
             : down
               ? "bg-green-50 text-green-600"
               : "bg-gray-100 text-gray-500";
+          const itemBought = bought.has(series.item);
           return (
-            <button
+            <div
               key={series.item}
-              type="button"
-              onClick={() => toggle(series.item)}
-              className={
-                "flex w-full items-center gap-2.5 py-2 text-left transition " +
-                (on ? "" : "opacity-40")
-              }
-              aria-pressed={on}
+              className={"flex w-full items-center gap-2 py-2 " + (on ? "" : "opacity-40")}
             >
-              {/* 銘柄名 */}
-              <span
-                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: ITEM_COLOR[series.item] }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-gray-900">
-                  {series.item}
-                </p>
-                <p className="truncate text-[10px] text-gray-400">
-                  /{series.unit}
-                </p>
-              </div>
-
-              {/* スパークライン（コンパクトなサムネイル） */}
-              <div className="h-8 w-16 shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={series.prices.map((p, i) => ({ i, p }))}
-                    margin={{ top: 4, right: 2, left: 2, bottom: 4 }}
-                  >
-                    <Line
-                      type="monotone"
-                      dataKey="p"
-                      stroke={TREND_COLOR[series.level]}
-                      strokeWidth={1.5}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* 現在値・前週比 */}
-              <div className="w-[76px] shrink-0 text-right">
-                <p className="text-sm font-bold text-gray-900">
-                  {yen(stats.current)}
-                </p>
+              <button
+                type="button"
+                onClick={() => toggle(series.item)}
+                className="flex flex-1 items-center gap-2 text-left transition"
+                aria-pressed={on}
+              >
+                {/* 銘柄名 */}
                 <span
-                  className={`inline-block rounded px-1 py-0.5 text-[10px] font-bold ${badge}`}
-                >
-                  {arrow} {Math.abs(stats.weeklyChange).toFixed(1)}%
-                </span>
-                {buySignal && sale && (
-                  <p className="mt-0.5 text-[9px] font-semibold text-green-600">
-                    🟢特売¥{sale.price}
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: ITEM_COLOR[series.item] }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {series.item}
                   </p>
-                )}
-              </div>
-            </button>
+                  <p className="truncate text-[10px] text-gray-400">
+                    /{series.unit}
+                  </p>
+                </div>
+
+                {/* スパークライン（コンパクトなサムネイル） */}
+                <div className="h-8 w-14 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={series.prices.map((p, i) => ({ i, p }))}
+                      margin={{ top: 4, right: 2, left: 2, bottom: 4 }}
+                    >
+                      <Line
+                        type="monotone"
+                        dataKey="p"
+                        stroke={TREND_COLOR[series.level]}
+                        strokeWidth={1.5}
+                        dot={(dotProps: {
+                          cx?: number;
+                          cy?: number;
+                          index?: number;
+                        }) => {
+                          const { cx, cy, index } = dotProps;
+                          if (itemBought && index === series.prices.length - 1) {
+                            return (
+                              <circle
+                                key={`bought-spark-${series.item}`}
+                                cx={cx}
+                                cy={cy}
+                                r={2.5}
+                                fill={TREND_COLOR[series.level]}
+                                stroke="#fff"
+                                strokeWidth={1}
+                              />
+                            );
+                          }
+                          return <g key={`dot-spark-${series.item}-${index}`} />;
+                        }}
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* 現在値・前週比 */}
+                <div className="w-[70px] shrink-0 text-right">
+                  <p className="text-sm font-bold text-gray-900">
+                    {yen(stats.current)}
+                  </p>
+                  <span
+                    className={`inline-block rounded px-1 py-0.5 text-[10px] font-bold ${badge}`}
+                  >
+                    {arrow} {Math.abs(stats.weeklyChange).toFixed(1)}%
+                  </span>
+                  {buySignal && sale && (
+                    <p className="mt-0.5 text-[9px] font-semibold text-green-600">
+                      🟢特売¥{sale.price}
+                    </p>
+                  )}
+                </div>
+              </button>
+
+              {/* 買った記録ボタン */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleBought(series.item, stats.current);
+                }}
+                aria-pressed={itemBought}
+                className={
+                  "shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold transition active:scale-[0.97] " +
+                  (itemBought
+                    ? "border-accent bg-accent text-white"
+                    : "border-gray-200 bg-white text-gray-500 hover:border-accent hover:text-accent")
+                }
+              >
+                {itemBought ? "✓買った" : "買った"}
+              </button>
+            </div>
           );
         })}
       </div>

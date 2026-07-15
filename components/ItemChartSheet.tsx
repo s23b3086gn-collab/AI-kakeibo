@@ -4,7 +4,7 @@
 // 結論カード／ウォッチリストの食材をタップすると開く。
 // 「買う前に、それが今高いか安いか」を時系列＋買い時シグナル＋特売ラインで裏付ける。
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   ComposedChart,
@@ -23,6 +23,7 @@ import {
 import type { PriceLevel } from "@/lib/pricePrediction";
 import type { MatchedChirashiItem } from "@/lib/chirashiMatch";
 import { RobotIcon } from "./RobotIcon";
+import { getRecentlyBoughtItems } from "@/lib/purchaseRecords";
 
 interface Props {
   itemName: string;
@@ -89,6 +90,12 @@ export function ItemChartSheet({ itemName, chirashiItems, onClose }: Props) {
     allowDragRef.current = false;
     setIsDragging(false);
   }
+
+  // 物価タブで「買った」記録済みなら、チャートにその点を反映する
+  const [bought, setBought] = useState(false);
+  useEffect(() => {
+    setBought(getRecentlyBoughtItems().has(itemName));
+  }, [itemName]);
 
   const series = PRICE_SERIES.find((s) => s.item === itemName) ?? null;
 
@@ -229,6 +236,11 @@ export function ItemChartSheet({ itemName, chirashiItems, onClose }: Props) {
                 🟢 買いシグナル
               </span>
             )}
+            {bought && (
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                ✓ 今週買った記録あり
+              </span>
+            )}
           </div>
         )}
 
@@ -288,7 +300,29 @@ export function ItemChartSheet({ itemName, chirashiItems, onClose }: Props) {
                 stroke={color}
                 strokeWidth={2}
                 fill="url(#sheetGrad)"
-                dot={{ r: 2, fill: color }}
+                dot={(dotProps: {
+                  cx?: number;
+                  cy?: number;
+                  index?: number;
+                  payload?: { label?: string; price?: number | null };
+                }) => {
+                  const { cx, cy, index, payload } = dotProps;
+                  if (payload?.price == null) return <g key={`empty-${index}`} />;
+                  if (bought && payload.label === "今週") {
+                    return (
+                      <circle
+                        key={`bought-${index}`}
+                        cx={cx}
+                        cy={cy}
+                        r={5}
+                        fill={color}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    );
+                  }
+                  return <circle key={`dot-${index}`} cx={cx} cy={cy} r={2} fill={color} />;
+                }}
                 activeDot={{ r: 4 }}
                 connectNulls={false}
               />
