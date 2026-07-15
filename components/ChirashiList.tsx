@@ -38,7 +38,7 @@ export function ChirashiList({ items }: Props) {
   const categoryOptions: CategoryFilter[] = ["すべて", ...CHIRASHI_CATEGORIES];
 
   return (
-    <Card title="🛒 今週のチラシ特売">
+    <Card title="今週のチラシ特売">
       {/* 店舗フィルタ */}
       <div className="-mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {storeOptions.map((s) => (
@@ -87,7 +87,7 @@ export function ChirashiList({ items }: Props) {
                     )}
                     {item.source === "flyer_image" && (
                       <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                        📷読取
+                        読取
                       </span>
                     )}
                   </div>

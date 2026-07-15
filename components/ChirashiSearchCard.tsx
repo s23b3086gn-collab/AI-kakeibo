@@ -17,9 +17,9 @@ import {
 } from "@/lib/chirashiSearch";
 
 // 「検索している感」を出すための段階メッセージ
-const LOADING_STEPS: { icon: "🔍" | "🧮" | "robot"; text: string }[] = [
-  { icon: "🔍", text: "チラシ・特売情報を検索中…" },
-  { icon: "🧮", text: "店舗ごとの価格を比較中…" },
+const LOADING_STEPS: { icon?: "robot"; text: string }[] = [
+  { text: "チラシ・特売情報を検索中…" },
+  { text: "店舗ごとの価格を比較中…" },
   { icon: "robot", text: "価格を予測中…" },
 ];
 
@@ -76,14 +76,14 @@ export function ChirashiSearchCard() {
   };
 
   return (
-    <Card title="🔍 AIチラシ検索">
+    <Card title="AIチラシ検索">
       <p className="-mt-1 mb-2 text-[11px] text-gray-500">
         食材名やお店を選ぶと、AIがチラシ・特売を探してきます
       </p>
 
       {/* お店で探す（AIがその店のチラシを持ってくる） */}
       <p className="mb-1 text-[11px] font-semibold text-gray-600">
-        🏬 お店で探す
+        お店で探す
       </p>
       <div className="-mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {SEARCH_STORES.map((s) => (
@@ -94,14 +94,14 @@ export function ChirashiSearchCard() {
             disabled={loading}
             className="shrink-0 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-sm transition hover:border-accent hover:text-accent active:scale-[0.97] disabled:opacity-40"
           >
-            🛒 {s.label}
+            {s.label}
           </button>
         ))}
       </div>
 
       {/* 食材で探す */}
       <p className="mb-1 text-[11px] font-semibold text-gray-600">
-        🥬 食材で探す
+        食材で探す
       </p>
       <form onSubmit={onSubmit} className="flex gap-2">
         <input
@@ -140,11 +140,7 @@ export function ChirashiSearchCard() {
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
           <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-accent" />
           <p className="flex items-center gap-1 text-sm text-gray-700">
-            {LOADING_STEPS[stepIndex].icon === "robot" ? (
-              <RobotIcon />
-            ) : (
-              <span aria-hidden>{LOADING_STEPS[stepIndex].icon}</span>
-            )}
+            {LOADING_STEPS[stepIndex].icon === "robot" && <RobotIcon />}
             {LOADING_STEPS[stepIndex].text}
           </p>
         </div>
@@ -156,7 +152,7 @@ export function ChirashiSearchCard() {
           {/* 要確認バナー（必須） */}
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5">
             <p className="text-[11px] font-semibold text-amber-800">
-              ⚠️ AI検索結果・要確認
+              AI検索結果・要確認
             </p>
             <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700">
               {result.disclaimer}

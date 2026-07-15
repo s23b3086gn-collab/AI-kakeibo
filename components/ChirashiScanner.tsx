@@ -116,7 +116,7 @@ export function ChirashiScanner({ onScan, scannedCount, onClear }: Props) {
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <h2 className="mb-1 text-sm font-semibold text-gray-700">
-        📷 チラシを読み取る
+        チラシを読み取る
       </h2>
       <p className="mb-2 text-[11px] text-gray-500">
         チラシを撮影すると、AIが特売品目を読み取って一覧に追加します
@@ -134,7 +134,7 @@ export function ChirashiScanner({ onScan, scannedCount, onClear }: Props) {
             チラシを解析中...
           </span>
         ) : (
-          <>📷 チラシを撮影して読み取る</>
+          <>チラシを撮影して読み取る</>
         )}
       </button>
 

@@ -7,7 +7,6 @@ export type ChirashiAdviceTone = "good" | "info" | "warn";
 
 export interface ChirashiAdvice {
   tone: ChirashiAdviceTone;
-  icon: string;
   title: string;
   message: string;
 }
@@ -19,7 +18,6 @@ export function generateChirashiAdvice(
     return [
       {
         tone: "info",
-        icon: "/icons/ai-robot.png",
         title: "特売情報がありません",
         message: "今週対象のチラシ特売情報がまだ登録されていません。",
       },
@@ -36,7 +34,6 @@ export function generateChirashiAdvice(
   if (top.discountRate !== null) {
     advices.push({
       tone: "good",
-      icon: "🏆",
       title: "今週イチのお買い得",
       message: `${top.store}の${top.itemName}が${top.discountRate}%オフの¥${top.price}${
         top.unit ? `（${top.unit}）` : ""
@@ -50,7 +47,6 @@ export function generateChirashiAdvice(
     const f = forYouBuyTime[0];
     advices.push({
       tone: "good",
-      icon: "🎯",
       title: "あなた向け・買い時",
       message: `よく買う${f.itemName}が${f.store}で特売中。AI価格予測とも合致しているので今が買い時です。`,
     });
@@ -60,7 +56,6 @@ export function generateChirashiAdvice(
       const f = forYou[0];
       advices.push({
         tone: "info",
-        icon: "🛒",
         title: "あなた向け特売",
         message: `よく買う食材の${f.itemName}が${f.store}で特売中です。まとめ買いの候補にどうぞ。`,
       });
@@ -74,7 +69,6 @@ export function generateChirashiAdvice(
   if (bestStore) {
     advices.push({
       tone: "info",
-      icon: "🏬",
       title: `${bestStore[0]}が特売豊富`,
       message: `今週は${bestStore[0]}が${bestStore[1]}品目と特売数最多。まとめて見てみましょう。`,
     });
