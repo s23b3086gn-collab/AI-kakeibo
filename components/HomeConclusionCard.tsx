@@ -19,7 +19,7 @@ export function HomeConclusionCard({ conclusion, onSelectItem }: Props) {
   return (
     <Card
       className="border-l-4 border-l-green-500"
-      title="🛒 今週の買い時"
+      title="今週の買い時"
     >
       {/* 結論文（1〜2行） */}
       <p className="text-sm font-medium leading-relaxed text-gray-800">

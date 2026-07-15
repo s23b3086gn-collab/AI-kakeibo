@@ -430,7 +430,19 @@ export default function Page() {
                   {/* クイック入力：タップで今日の支出を即記録 */}
                   {/* hasNoRecords のときは pulse する accent リングを重ねて誘導 */}
                   <div className="relative">
-                    <Card title="⚡ クイック入力">
+                    <Card
+                      title={
+                        <span className="inline-flex items-center gap-1.5">
+                          <img
+                            src="/icons/quick-input.png"
+                            alt=""
+                            aria-hidden
+                            className="h-4 w-4"
+                          />
+                          クイック入力
+                        </span>
+                      }
+                    >
                       <div className="mb-2 flex items-center justify-between">
                         <p className="text-xs text-gray-500">
                           タップで今日の支出をワンタップ記録

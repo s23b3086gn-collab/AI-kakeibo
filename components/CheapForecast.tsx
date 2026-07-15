@@ -20,8 +20,22 @@ export function CheapForecast() {
     >
       {/* タイトル行：AI予測であることを小さく明示 */}
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-semibold text-green-800">
-          📉 もうすぐお買い得
+        <p className="flex items-center gap-1 text-xs font-semibold text-green-800">
+          <span
+            aria-hidden
+            className="inline-block h-3.5 w-3.5 shrink-0 bg-green-800"
+            style={{
+              WebkitMaskImage: "url(/icons/price.png)",
+              maskImage: "url(/icons/price.png)",
+              WebkitMaskSize: "contain",
+              maskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+              maskPosition: "center",
+            }}
+          />
+          もうすぐお買い得
         </p>
         <span className="text-[10px] text-green-700">AI分析</span>
       </div>

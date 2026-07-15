@@ -120,7 +120,7 @@ export function CalendarHeatmap({ expenses }: Props) {
   }, []);
 
   return (
-    <Card title="📅 支出カレンダー">
+    <Card title="支出カレンダー">
       {/* === 月ナビゲーション === */}
       <div className="mb-3 flex items-center justify-between">
         <button

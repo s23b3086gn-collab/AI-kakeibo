@@ -63,7 +63,7 @@ export function WeeklyReportCard({
   };
 
   return (
-    <Card title="📊 今週のふりかえり">
+    <Card title="今週のふりかえり">
       {/* --- 既存のコメントがあれば常に表示（再生成中も残す） --- */}
       {comment && (
         <div className="mb-3 rounded-xl border border-green-200 bg-green-50 p-3">
