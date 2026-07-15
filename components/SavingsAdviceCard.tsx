@@ -35,7 +35,11 @@ export function SavingsAdviceCard({ advices }: Props) {
               key={i}
               className={`flex items-start gap-3 rounded-xl border p-3 ${s.wrap}`}
             >
-              <span className="text-2xl leading-none">{a.icon}</span>
+              {a.icon.startsWith("/") ? (
+                <img src={a.icon} alt="" aria-hidden className="h-6 w-6 shrink-0" />
+              ) : (
+                <span className="text-2xl leading-none">{a.icon}</span>
+              )}
               <div className="min-w-0 flex-1">
                 <p className={`text-sm font-semibold ${s.title}`}>{a.title}</p>
                 <p className="mt-0.5 text-xs leading-relaxed text-gray-700">

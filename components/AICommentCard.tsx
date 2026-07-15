@@ -2,6 +2,7 @@
 
 // AIコメントを表示するカード。アプリの中心体験。
 import { Card } from "./Card";
+import { RobotIcon } from "./RobotIcon";
 import type { AIComment } from "@/lib/aiComment";
 
 interface Props {
@@ -21,7 +22,13 @@ const TONE_STYLE: Record<
 
 export function AICommentCard({ comments }: Props) {
   return (
-    <Card title="🤖 AIコメント">
+    <Card
+      title={
+        <span className="inline-flex items-center gap-1.5">
+          <RobotIcon /> AIコメント
+        </span>
+      }
+    >
       <ul className="space-y-2">
         {comments.map((c, i) => {
           const style = TONE_STYLE[c.tone];

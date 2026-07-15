@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card } from "./Card";
+import { RobotIcon } from "./RobotIcon";
 import {
   SEARCH_STORES,
   SEARCH_SUGGESTIONS,
@@ -16,10 +17,10 @@ import {
 } from "@/lib/chirashiSearch";
 
 // 「検索している感」を出すための段階メッセージ
-const LOADING_STEPS = [
-  "🔍 チラシ・特売情報を検索中…",
-  "🧮 店舗ごとの価格を比較中…",
-  "🤖 価格を予測中…",
+const LOADING_STEPS: { icon: "🔍" | "🧮" | "robot"; text: string }[] = [
+  { icon: "🔍", text: "チラシ・特売情報を検索中…" },
+  { icon: "🧮", text: "店舗ごとの価格を比較中…" },
+  { icon: "robot", text: "価格を予測中…" },
 ];
 
 export function ChirashiSearchCard() {
@@ -138,7 +139,14 @@ export function ChirashiSearchCard() {
       {loading && (
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
           <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-accent" />
-          <p className="text-sm text-gray-700">{LOADING_STEPS[stepIndex]}</p>
+          <p className="flex items-center gap-1 text-sm text-gray-700">
+            {LOADING_STEPS[stepIndex].icon === "robot" ? (
+              <RobotIcon />
+            ) : (
+              <span aria-hidden>{LOADING_STEPS[stepIndex].icon}</span>
+            )}
+            {LOADING_STEPS[stepIndex].text}
+          </p>
         </div>
       )}
 
@@ -158,7 +166,9 @@ export function ChirashiSearchCard() {
           {/* AI予測まとめ */}
           <div className="rounded-xl border border-gray-200 bg-white p-3">
             <p className="text-xs leading-relaxed text-gray-700">
-              <span className="font-semibold">🤖 AI予測：</span>
+              <span className="inline-flex items-center gap-1 font-semibold">
+                <RobotIcon /> AI予測：
+              </span>
               {result.summary}
             </p>
           </div>

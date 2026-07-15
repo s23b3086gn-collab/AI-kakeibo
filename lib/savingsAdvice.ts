@@ -112,7 +112,7 @@ export function generateSavingsAdvice(
   if (advices.length === 0) {
     advices.push({
       tone: "info",
-      icon: "🤖",
+      icon: "/icons/ai-robot.png",
       title: "AIが分析中",
       message:
         "支出を入力するほど、物価情報と組み合わせて具体的な節約アドバイスを提案できます。",

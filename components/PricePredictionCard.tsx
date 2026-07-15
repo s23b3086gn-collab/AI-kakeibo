@@ -43,7 +43,6 @@ export function PricePredictionCard({ predictions }: Props) {
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  {p.emoji && <span className="text-lg">{p.emoji}</span>}
                   <span className="truncate font-semibold text-gray-900">
                     {p.item}
                   </span>

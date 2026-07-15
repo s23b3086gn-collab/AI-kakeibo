@@ -16,15 +16,6 @@ interface Props {
   items: MatchedChirashiItem[];
 }
 
-const CATEGORY_EMOJI: Record<ChirashiCategory, string> = {
-  野菜: "🥬",
-  肉: "🍗",
-  魚: "🐟",
-  調味料: "🧂",
-  惣菜: "🍱",
-  その他: "📦",
-};
-
 type StoreFilter = ChirashiStore | "すべて";
 type CategoryFilter = ChirashiCategory | "すべて";
 
@@ -60,7 +51,7 @@ export function ChirashiList({ items }: Props) {
         {categoryOptions.map((c) => (
           <FilterChip
             key={c}
-            label={c === "すべて" ? c : `${CATEGORY_EMOJI[c]} ${c}`}
+            label={c}
             active={category === c}
             onClick={() => setCategory(c)}
           />
@@ -81,7 +72,6 @@ export function ChirashiList({ items }: Props) {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span aria-hidden>{CATEGORY_EMOJI[item.category]}</span>
                     <span className="font-semibold text-gray-900">
                       {item.itemName}
                     </span>

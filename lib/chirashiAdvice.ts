@@ -19,7 +19,7 @@ export function generateChirashiAdvice(
     return [
       {
         tone: "info",
-        icon: "🤖",
+        icon: "/icons/ai-robot.png",
         title: "特売情報がありません",
         message: "今週対象のチラシ特売情報がまだ登録されていません。",
       },

@@ -22,6 +22,7 @@ import {
 } from "@/lib/priceHistory";
 import type { PriceLevel } from "@/lib/pricePrediction";
 import type { MatchedChirashiItem } from "@/lib/chirashiMatch";
+import { RobotIcon } from "./RobotIcon";
 
 interface Props {
   itemName: string;
@@ -317,7 +318,9 @@ export function ItemChartSheet({ itemName, chirashiItems, onClose }: Props) {
         {series && view && (
           <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
             <p className="text-xs leading-relaxed text-gray-700">
-              <span className="font-semibold">🤖 AI予測：</span>
+              <span className="inline-flex items-center gap-1 font-semibold">
+                <RobotIcon /> AI予測：
+              </span>
               {series.note}。来週は{yen(view.stats.forecast)}前後の見込み。
               {buySignal &&
                 cheapest &&

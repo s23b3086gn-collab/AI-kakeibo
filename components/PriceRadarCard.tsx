@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import { Card } from "./Card";
+import { RobotIcon } from "./RobotIcon";
 import {
   PRICE_SERIES,
   computeStats,
@@ -247,8 +248,7 @@ export function PriceRadarCard() {
                 style={{ backgroundColor: ITEM_COLOR[series.item] }}
               />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1 truncate text-sm font-semibold text-gray-900">
-                  <span aria-hidden>{series.emoji}</span>
+                <p className="truncate text-sm font-semibold text-gray-900">
                   {series.item}
                 </p>
                 <p className="truncate text-[10px] text-gray-400">
@@ -299,7 +299,9 @@ export function PriceRadarCard() {
       {/* ===== AIサマリー ===== */}
       <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
         <p className="text-xs leading-relaxed text-gray-700">
-          <span className="font-semibold">🤖 AI予測：</span>
+          <span className="inline-flex items-center gap-1 font-semibold">
+            <RobotIcon /> AI予測：
+          </span>
           {summary}
         </p>
       </div>

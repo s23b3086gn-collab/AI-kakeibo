@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 
 interface CardProps {
-  title?: string;          // カード上部のタイトル（任意）
+  title?: ReactNode;       // カード上部のタイトル（任意。文字列 or アイコン込みのJSX）
   children: ReactNode;     // カード内容
   className?: string;      // 追加のクラス
 }
