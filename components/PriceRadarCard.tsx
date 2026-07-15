@@ -130,7 +130,7 @@ export function PriceRadarCard() {
   ];
 
   return (
-    <Card title="📡 価格レーダー（AI分析）">
+    <Card title="価格レーダー（AI分析）">
       <p className="-mt-1 mb-2 text-[11px] text-gray-500">
         主要食材の値動きを「8週前＝100」の指数で比較（自動更新）
       </p>

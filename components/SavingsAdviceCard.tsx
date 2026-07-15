@@ -25,7 +25,7 @@ export function SavingsAdviceCard({ advices }: Props) {
     <Card
       // ヘッダはちょっとAI感を出すグラデっぽい雰囲気にしたいのでクラスでアレンジ
       className="border-l-4 border-l-green-500"
-      title="💡 AI節約アドバイス"
+      title="AI節約アドバイス"
     >
       <ul className="space-y-2">
         {advices.map((a, i) => {

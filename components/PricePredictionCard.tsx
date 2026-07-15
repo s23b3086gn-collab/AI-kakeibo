@@ -29,7 +29,7 @@ const LEVEL_STYLE: Record<
 
 export function PricePredictionCard({ predictions }: Props) {
   return (
-    <Card title="🔮 価格予測（AI分析）">
+    <Card title="価格予測（AI分析）">
       <ul className="space-y-2">
         {predictions.map((p) => {
           const s = LEVEL_STYLE[p.level];

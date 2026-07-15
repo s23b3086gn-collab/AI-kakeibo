@@ -202,7 +202,7 @@ export function WeeklyComparisonCard({ expenses }: Props) {
   };
 
   return (
-    <Card title="🆚 先週 vs 今週">
+    <Card title="先週 vs 今週">
       {/* ===== 全体トーンコメント（フランク） ===== */}
       <div
         className={`mb-3 rounded-xl border p-3 text-sm font-medium ${toneStyle[view.summary.tone]}`}

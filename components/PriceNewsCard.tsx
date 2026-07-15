@@ -29,7 +29,7 @@ function ChangeBadge({ rate }: { rate: number }) {
 
 export function PriceNewsCard({ news }: Props) {
   return (
-    <Card title="📰 最近の物価高ニュース">
+    <Card title="最近の物価高ニュース">
       {/* スマホで横スクロールできるカード列 */}
       <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
         {news.map((n) => (
